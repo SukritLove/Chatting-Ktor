@@ -51,7 +51,7 @@ fun App(networkingUtils: PlatformNetworkingUtils) {
                                 val message: String? = receiveChannel.readUTF8Line()
                                 receivedName.value = "$message"
                                 println("Status:: Message Receive")
-                                sendChannel.writeStringUtf8("\nReceive : your message is $message")
+                                sendChannel.writeStringUtf8("[Receive] your message is $message")
                             } catch (e: Throwable) {
                                 println("Error : $e")
                             } finally {
