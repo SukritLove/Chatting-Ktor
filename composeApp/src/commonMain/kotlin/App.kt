@@ -1,39 +1,76 @@
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.Button
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import org.jetbrains.compose.resources.ExperimentalResourceApi
-import org.jetbrains.compose.resources.painterResource
+import io.ktor.network.selector.SelectorManager
+import io.ktor.network.sockets.aSocket
+import io.ktor.network.sockets.openReadChannel
+import io.ktor.network.sockets.openWriteChannel
+import io.ktor.utils.io.core.use
+import io.ktor.utils.io.readUTF8Line
+import io.ktor.utils.io.writeStringUtf8
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalResourceApi::class)
 @Composable
-fun App() {
+fun App(networkingUtils: PlatformNetworkingUtils) {
     MaterialTheme {
-        var greetingText by remember { mutableStateOf("Hello World!") }
-        var showImage by remember { mutableStateOf(false) }
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Button(onClick = {
-                greetingText = "Compose: ${Greeting().greet()}"
-                showImage = !showImage
-            }) {
-                Text(greetingText)
+        val ipAddress: MutableState<String?> = remember { mutableStateOf("") }
+        val receivedName: MutableState<String?> = remember { mutableStateOf("") }
+        val socketAddress: MutableState<String?> = remember { mutableStateOf("") }
+
+
+        LaunchedEffect(Unit) {
+            ipAddress.value = networkingUtils.getCurrentWifiIpAddress()
+            launch(Dispatchers.IO) {
+                val selectorManager = SelectorManager(Dispatchers.IO)
+                val serverSocket =
+                    ipAddress.value?.let { aSocket(selectorManager).tcp().bind(it, 8080) }
+
+                serverSocket?.use {
+                    println("Status:: Server is listening at ${serverSocket.localAddress}")
+                    socketAddress.value = "Server is listening at ${serverSocket.localAddress}"
+
+                    while (true) {
+                        val socket = serverSocket.accept()
+                        println("Status:: Accepted $socket")
+
+                        launch(Dispatchers.IO) {
+                            val receiveChannel = socket.openReadChannel()
+                            val sendChannel = socket.openWriteChannel(autoFlush = true)
+                            try {
+                                val message: String? = receiveChannel.readUTF8Line()
+                                receivedName.value = "$message"
+                                println("Status:: Message Receive")
+                                sendChannel.writeStringUtf8("\nReceive : your message is $message")
+                            } catch (e: Throwable) {
+                                println("Error : $e")
+                            } finally {
+                                socket.close()
+                            }
+                        }
+                    }
+                }
             }
-            AnimatedVisibility(showImage) {
-                Image(
-                    painterResource("compose-multiplatform.xml"),
-                    null
-                )
-            }
+        }
+
+        Column(
+            Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text("${socketAddress.value}")
+            Text("Receive Message : ${receivedName.value}")
         }
     }
 }
+

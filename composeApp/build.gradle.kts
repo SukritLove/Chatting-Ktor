@@ -39,6 +39,8 @@ kotlin {
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.coroutines.swing)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -46,6 +48,18 @@ kotlin {
             implementation(compose.material)
             @OptIn(ExperimentalComposeLibrary::class)
             implementation(compose.components.resources)
+
+            implementation(libs.ktor.network)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.coroutines.extensions)
+
+            implementation(libs.mvvm.core)
+            implementation(libs.mvvm.compose)
+            implementation(libs.mvvm.flow)
+            implementation(libs.mvvm.flow.compose)
+
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.cio)
         }
     }
 }
@@ -88,6 +102,10 @@ android {
     dependencies {
         debugImplementation(libs.compose.ui.tooling)
     }
+}
+dependencies {
+
+
 }
 
 compose.desktop {
