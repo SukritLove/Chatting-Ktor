@@ -38,7 +38,7 @@ fun App(networkingUtils: PlatformNetworkingUtils) {
 
                 serverSocket?.use {
                     println("Status:: Server is listening at ${serverSocket.localAddress}")
-                    socketAddress.value = "Server is listening at ${serverSocket.localAddress}"
+                    socketAddress.value = "IP Address is : ${serverSocket.localAddress}"
 
                     while (true) {
                         val socket = serverSocket.accept()
@@ -51,7 +51,7 @@ fun App(networkingUtils: PlatformNetworkingUtils) {
                                 val message: String? = receiveChannel.readUTF8Line()
                                 receivedName.value = "$message"
                                 println("Status:: Message Receive")
-                                sendChannel.writeStringUtf8("[Receive] your message is $message")
+                                sendChannel.writeStringUtf8("[Receive] your message is \"$message\"")
                             } catch (e: Throwable) {
                                 println("Error : $e")
                             } finally {
